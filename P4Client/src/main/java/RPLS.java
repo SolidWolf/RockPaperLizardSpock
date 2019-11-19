@@ -77,6 +77,7 @@ public class RPLS extends Application {
 	
 	//EventHandlers
 	EventHandler<MouseEvent> playSelect;
+	EventHandler<MouseEvent> challengeSelect;
 	EventHandler<ActionEvent> quitButtonHandler;
 	EventHandler<ActionEvent> playAgainHandler;
 	
@@ -154,6 +155,7 @@ public class RPLS extends Application {
 
 							//Update the clients that user can challenge
 							if(gameState.newPlayer == true) {
+								playerID = gameState.playerID;							//Get what the id of the user is 
 								for(GameInfo.PlayerInfo i : gameState.playerinfo) {
 									String ID = Integer.toString(i.clientID);
 									if(clientList.getItems().contains("Player " + ID)) {
@@ -225,6 +227,28 @@ public class RPLS extends Application {
 				}
 			}
  		});
+		
+		
+		//event handler for the client list                        //Edit: Angel
+        this.challengeSelect = new EventHandler<MouseEvent> () {
+
+	        @Override
+	        public void handle(MouseEvent event) {
+
+	        	
+	        	String[] senterID = clientList.getSelectionModel().getSelectedItem().split(" ", 2);
+	        	
+	        	if (Integer.parseInt(senterID[1]) == playerID) {
+	        		actionList.getItems().add("You cannot challenge yourself!");
+	        	}
+	        	else {
+	        		gameState.isChallenge = true;
+	        		gameState.sentBy = playerID;
+		        	gameState.challengeFor = Integer.parseInt(senterID[1]);
+		        	clientConnection.send(gameState);
+	        	}
+	        }
+        };
 		
 		this.playSelect = new EventHandler<MouseEvent> () {
 
@@ -302,6 +326,9 @@ public class RPLS extends Application {
 		//Initialize list for clients
 		this.clientList = new ListView<String>();
 		this.clientList.setMaxHeight(250);
+		
+		//Add event handler
+		this.clientList.setOnMouseClicked(challengeSelect);
 		
 		//Initialize text and set style
 		this.clientListText = new Text("Players to challenge");
