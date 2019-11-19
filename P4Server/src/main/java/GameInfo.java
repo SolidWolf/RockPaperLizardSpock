@@ -27,9 +27,11 @@ public class GameInfo implements Serializable {
 	//Store if what is sent is 
 	boolean isMessage = false;
 	
-	//Store if either of the players disconnected
-	boolean p1Disconnected = false;
-	boolean p2Disconnected = false;
+	//Check if any player disconnected
+	boolean isDisconnect = false;
+		
+	//Store which player disconnected
+	int disconnectID;
 		
 	//Store the message
 	String message = "N/A";;

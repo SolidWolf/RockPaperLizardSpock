@@ -95,15 +95,15 @@ public class RPLS extends Application {
 						gameState = (GameInfo) data;
 						
 						//Check if a player disconnected
-						if (gameState.p1Disconnected == true || gameState.p2Disconnected == true) {
-							
+						if (gameState.isDisconnect == true) {
+							serverListView.getItems().add("Player " + gameState.disconnectID + " disconnected!");
 							displayPlayersConnected.setText("Players Connected:" + gameState.playerCount);
-							
-							//Determine who disconnected and add message to listview
-							if (gameState.p1Disconnected == true) 
-								serverListView.getItems().add("Player 1 has disconnected");
-							else 
-								serverListView.getItems().add("Player 2 has disconnected");
+						}
+						//Check if a new player connected
+						else if (gameState.newPlayer == true) {
+							displayPlayersConnected.setText("Players Connected:" + gameState.playerCount);
+							serverListView.getItems().add("Player " + gameState.playerID + " has connected");
+
 						}
 						//Check if any of the players are playing again 
 						else if (gameState.p1PlayAgain == true || gameState.p2PlayAgain == true) {
@@ -116,12 +116,6 @@ public class RPLS extends Application {
 								serverListView.getItems().add("Player 1 is playing again");
 							else 
 								serverListView.getItems().add("Player 2 is playing again");
-						}
-						else if (gameState.newPlayer == true) {
-							displayPlayersConnected.setText("Players Connected:" + gameState.playerCount);
-							
-							serverListView.getItems().add("Player " + gameState.playerID + " has connected");
-
 						}
 						else if(gameState.playerCount >= 2) {
 							

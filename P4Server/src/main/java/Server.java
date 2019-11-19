@@ -113,8 +113,7 @@ public class Server {
 			gameState.newPlayer = true;
 			gameState.p1PlayAgain = false;
 			gameState.p2PlayAgain = false;
-			gameState.p1Disconnected = false;
-			gameState.p2Disconnected = false;
+			gameState.isDisconnect = false;
 			gameState.playerCount = clients.size();
 			if (clients.size() < 2) {
 				gameState.message = "Waiting for opponent to connect...";
@@ -160,8 +159,7 @@ public class Server {
 					}
 					else if (gameState.p1PlayAgain == true || gameState.p2PlayAgain == true) {
 						
-						gameState.p1Disconnected = false;
-						gameState.p2Disconnected = false;
+						gameState.isDisconnect = false;
 						
 						callback.accept(gameState);
 						
@@ -180,33 +178,34 @@ public class Server {
 					updateClients(gameState);
 
 				} catch(Exception e) {
-					
-					GameInfo gameInfo = new GameInfo();
-					
+										
 					//Remove the client from the arrayList
 					clients.remove(this);
 					
+					//Add the ID to the list of available used IDs
+					reuseID.add(this.threadNum);	
+					
+					//Remove the ID from the playerinfo arrayList
+					for (int i = 0; i < gameState.playerinfo.size(); i++) {
+						if (gameState.playerinfo.get(i).clientID == this.threadNum) {
+							gameState.playerinfo.remove(i);
+							break;
+						}
+					}
+					
 					//Determine who disconnected and sent it to the GUI
-					if (this.threadNum == 0) {
-						gameState.p1Disconnected = true;
-						gameInfo.p1Disconnected = true;
-					}
-					else if (this.threadNum == 1) {
-						gameState.p2Disconnected = true;
-						gameInfo.p2Disconnected = true;
-					}
+					gameState.newPlayer = false;
+					gameState.disconnectID = this.threadNum;
+					gameState.isDisconnect = true;
 					
 					gameState.playerCount = clients.size();		//update number of players
 					
+					//Update the server GUI
 					callback.accept(gameState);	
 					
-					gameState = gameInfo;
-					
+					//Update the clients
 					updateClients(gameState);
-				
-					System.out.println("Added:" + this.threadNum);
-					reuseID.add(this.threadNum);
-					
+									
 			    	break;				//End the loop
 				}
 			}

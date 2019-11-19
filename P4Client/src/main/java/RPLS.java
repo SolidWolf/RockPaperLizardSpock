@@ -157,20 +157,33 @@ public class RPLS extends Application {
 								for(GameInfo.PlayerInfo i : gameState.playerinfo) {
 									String ID = Integer.toString(i.clientID);
 									if(clientList.getItems().contains("Player " + ID)) {
-										continue;							//Editor: Luis
+										continue;							
 									} 
 									clientList.getItems().add("Player " + ID);
 								} 
 							}
+							else if (gameState.isDisconnect == true) {
+								
+								actionList.getItems().add("Player " + gameState.disconnectID + " disconnected!");
+								
+								//Remove the ID from the list of clients
+								for (int i = 0; i < clientList.getItems().size(); i++) {
+									if (clientList.getItems().get(i).equals("Player " + gameState.disconnectID)) {
+										clientList.getItems().remove(i);
+										break;
+									}
+								}
+								
+							}
 
 							//Check if the given gameState includes a message
-							if (gameState.isMessage == true) {
+							else if (gameState.isMessage == true) {
 								actionList.getItems().add(gameState.message);		//Add the message to the listView
 								playerID = gameState.playerID;							//Get what the id of the user is 
 							}
 
 							//Check if a player disconnected
-							else if(gameState.p1Disconnected == true || gameState.p2Disconnected == true) {
+							else if(gameState.isDisconnect == true) {
 									playAgainScene = getPlayAgainScene("Opponent has disconnected!");
 									primaryStage.setScene(playAgainScene);
 							}	
