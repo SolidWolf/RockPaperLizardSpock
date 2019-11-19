@@ -175,9 +175,13 @@ public class RPLS extends Application {
 										break;
 									}
 								}
-								
 							}
-
+							else if (gameState.challengeAccepted = true) {
+								if (gameState.sentBy == playerID || gameState.challengeFor == playerID) {
+									playingScene = getPlayingScene();
+									primaryStage.setScene(playingScene);
+								}
+							}
 							//Check if the given gameState includes a message
 							else if (gameState.isMessage == true) {
 								actionList.getItems().add(gameState.message);		//Add the message to the listView
@@ -235,11 +239,18 @@ public class RPLS extends Application {
 	        @Override
 	        public void handle(MouseEvent event) {
 
-	        	
 	        	String[] senterID = clientList.getSelectionModel().getSelectedItem().split(" ", 2);
+	        	int challengeForIndex = 0;
 	        	
+	        	for (int i = 0; i < gameState.playerinfo.size(); i++) {
+					if (gameState.playerinfo.get(i).clientID == Integer.parseInt(senterID[1])) 
+						challengeForIndex = i;
+	        	}
 	        	if (Integer.parseInt(senterID[1]) == playerID) {
 	        		actionList.getItems().add("You cannot challenge yourself!");
+	        	}
+	        	else if (gameState.playerinfo.get(challengeForIndex).isPlaying == true) {
+	        		actionList.getItems().add("Playing is already playing");
 	        	}
 	        	else {
 	        		gameState.isChallenge = true;
@@ -400,7 +411,8 @@ public class RPLS extends Application {
 		
 		//Initialize actionlist and set starting text
 		this.actionList = new ListView<String>();
-		this.actionList.setMaxHeight(200);
+		this.actionList.setMaxHeight(400);
+		
 		this.actionList.getItems().add("Welcome to RPLS");
 		this.actionList.getItems().add("IP: " + ip + " and port: "+ port);
 		
@@ -418,13 +430,10 @@ public class RPLS extends Application {
 		this.opponentInfo = new VBox();
 		this.opponentInfo.getChildren().addAll(opponentText, opponentPlayed);
 		
-		this.screenInfo = new VBox();										//Editor: Luis
-		this.screenInfo.getChildren().addAll(actionList, clientList);
-		
 		//Add elements to the borderpane
 		this.playingScreen.setTop(playingTitle);
 		this.playingScreen.setBottom(playMenu);
-		this.playingScreen.setRight(screenInfo);    //Editor: Luis
+		this.playingScreen.setRight(actionList);    
 		this.playingScreen.setLeft(playerInfo);
 		this.playingScreen.setCenter(opponentInfo);
 		
@@ -432,7 +441,6 @@ public class RPLS extends Application {
 		VBox.setMargin(promptWhatToPlay, new Insets(0,0,15,235));
 		VBox.setMargin(opponentPlayed, new Insets(40,0,0,40));
 		VBox.setMargin(playerPlayed, new Insets(40,0,0,40));
-
 		
 		//Set margins for the play menu HBox
 		HBox.setMargin(rockImage, new Insets(0,10,0,0));

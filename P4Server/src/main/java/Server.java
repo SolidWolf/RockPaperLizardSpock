@@ -96,6 +96,23 @@ public class Server {
 			}
 		}
 		
+		//Send the game state to all the clients on the server
+		public void updatePlayingClients(GameInfo state, int client1, int client2) {
+			int numClients = clients.size();
+			for(int i = 0; i < numClients; i++) {
+				ClientThread c = clients.get(i);
+				
+				if (c.threadNum == client1 || c.threadNum == client2) {
+					try {
+						state.playerID = c.threadNum;			//Get the id of the thread
+						c.output.reset();
+						c.output.writeObject(state);
+					}
+					catch(Exception e) {}
+				}
+			}
+		}
+		
 		public void run() {
 						
 			try {
@@ -132,7 +149,26 @@ public class Server {
 					
 					gameState.newPlayer = false;
 					gameState.isMessage = false;
-					gameState.updateClientUI = false;		
+					gameState.updateClientUI = false;
+					if (gameState.isChallenge == true) {
+						
+						int challengeForIndex = 0;
+						int sentFromIndex = 0;
+						
+						//Remove the ID from the playerinfo arrayList
+						for (int i = 0; i < gameState.playerinfo.size(); i++) {
+							if (gameState.playerinfo.get(i).clientID == gameState.challengeFor) 
+								challengeForIndex = i;
+							else if (gameState.playerinfo.get(i).clientID == gameState.sentBy)
+								sentFromIndex = i;
+						}
+						
+						gameState.playerinfo.get(challengeForIndex).isPlaying = true;
+						gameState.playerinfo.get(sentFromIndex).isPlaying = true;
+						
+						updateClients(gameState);
+					}
+					/*		
 					if (gameState.p1Played == true && gameState.p2Played == true) {
 						
 						gameState.roundWinner = gameLogic.roundWinner(gameState.p1Plays, gameState.p2Plays);
@@ -174,7 +210,7 @@ public class Server {
 							gameState.isMessage = true;
 							gameState.message = "Waiting for opponent...";
 						}
-					}
+					} */
 					updateClients(gameState);
 
 				} catch(Exception e) {

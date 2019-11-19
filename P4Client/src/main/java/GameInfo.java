@@ -74,6 +74,9 @@ public class GameInfo implements Serializable {
 	
 	//Determine who the challenge is for
 	int challengeFor;
+	
+	//Check if the challenge was accepted
+	boolean challengeAccepted = false;
 		
 	//Store the player information
 	class PlayerInfo implements Serializable {
