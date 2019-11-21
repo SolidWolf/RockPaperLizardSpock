@@ -32,13 +32,12 @@ public class RPLS extends Application {
 	//Listview to store all the actions
 	ListView<String> serverListView;
 	
+	//Scenes 
 	Scene startScene;
 	Scene serverScene;
-	Scene waitingScene;
 	
 	GameInfo gameState = new GameInfo();
 	Server serverConnection;
-
 
 	public static void main(String[] args) {
 		launch(args);
@@ -103,58 +102,36 @@ public class RPLS extends Application {
 						else if (gameState.newPlayer == true) {
 							displayPlayersConnected.setText("Players Connected:" + gameState.playerCount);
 							serverListView.getItems().add("Player " + gameState.playerID + " has connected");
-
+						}
+						else if (gameState.isChallenge == true) {
+							serverListView.getItems().add("Player " + gameState.sentBy + " challenged Player " + gameState.sentFor);
 						}
 						//Check if any of the players are playing again 
-						else if (gameState.p1PlayAgain == true || gameState.p2PlayAgain == true) {
+						else if(gameState.updateServerUI == true) {
 							
-							if (gameState.p1PlayAgain == true && gameState.p2PlayAgain == true) {
-								serverListView.getItems().add("Both players are playing again");
-								serverListView.getItems().add("Both players are playing again");
+							//print out the choices of the 2 players
+							int challengeForIndex = 0;
+							int sentFromIndex = 0;
+							
+							//Get the ID from the playerinfo arrayList
+							for (int i = 0; i < gameState.playerinfo.size(); i++) {
+								if (gameState.playerinfo.get(i).clientID == gameState.sentFor)
+									challengeForIndex = i;
+								else if (gameState.playerinfo.get(i).clientID == gameState.sentBy)
+									sentFromIndex = i;
 							}
-							else if (gameState.p1PlayAgain == true) 
-								serverListView.getItems().add("Player 1 is playing again");
-							else 
-								serverListView.getItems().add("Player 2 is playing again");
-						}
-						else if(gameState.playerCount >= 2) {
 							
-							//Update the GUI
-							if (gameState.updateServerUI == true) {
-								
-								//Add what each player played to the listViews
-								serverListView.getItems().add("Player 1 played " +  gameState.p1Plays);
-								serverListView.getItems().add("Player 2 played " + gameState.p2Plays);
-								
-								//Update listview with who won and who loss
-								if (gameState.roundWinner == "p1") {
-									serverListView.getItems().add("Player 1 won the round");
-									serverListView.getItems().add("Player 2 loss the round");
-								}
-								else if (gameState.roundWinner == "p2") {
-									serverListView.getItems().add("Player 1 loss the round");
-									serverListView.getItems().add("Player 2 won the round");
-								}
-								else {
-									serverListView.getItems().add("The round ended in a draw");
-								}
-								
-								//Add the points of each player to the listView
-								serverListView.getItems().add("Player 1 has " + gameState.p1Points + " points");
-								serverListView.getItems().add("Player 2 has " + gameState.p2Points + " points");
-								
-								//Add who won and who loss to the listView
-								if (gameState.winnerFound == true) {
-									if (gameState.gameWinner.equals("p1")) {
-										serverListView.getItems().add("Player 1 wins!");
-										serverListView.getItems().add("Player 2 loses!");
-									}
-									else {
-										serverListView.getItems().add("Player 1 loses!");
-										serverListView.getItems().add("Player 2 wins!");
-									}
-								}
-							}			
+							serverListView.getItems().add("Player " + gameState.sentFor + " has chose " + gameState.playerinfo.get(challengeForIndex).playerPlayed);
+							serverListView.getItems().add("Player " + gameState.sentBy + " has chose " + gameState.playerinfo.get(sentFromIndex).playerPlayed);
+							
+							//print out the result of the game
+							if(gameState.roundWinner.equals("draw")) {
+								serverListView.getItems().add("The game of Player " + gameState.sentFor + " and" + " Player " + gameState.sentBy +  " has ended in a draw");
+							}
+							else {
+								serverListView.getItems().add("Player " + gameState.roundWinner + " won the game.");
+							}
+							serverListView.getItems().add("");			
 						}
 						
 					});
@@ -196,35 +173,9 @@ public class RPLS extends Application {
 		VBox.setMargin(displayPlayersConnected, new Insets(15,0,0,350));
 		VBox.setMargin(serverListView, new Insets(20,0,0,100));
 
-		
-
-		
 		return new Scene(serverScreen, 900,600);
 	}
 	
-	/*	NOT USED
-	public Scene getWaitingScene(int port) {
-		
-		this.waitingScreen = new VBox();
-		this.waitingScreen.setStyle("-fx-background-color:#eff0e9");
-		
-		//Set the text for waiting for players to connect and style it
-		Text displayWaiting = new Text("Waiting for players to connect to port " + port);
-		displayWaiting.setStyle("-fx-font: 20 arial");
-		
-		//Set the text for players connected and style it
-		this.displayPlayersConnected = new Text("Players Connected:0");
-		this.displayPlayersConnected.setStyle("-fx-font: 20 arial");
-		
-		//Add the text to the Vbox
-		waitingScreen.getChildren().addAll(displayWaiting,displayPlayersConnected);
-		
-		//Set margins for elements in the vbox
-		VBox.setMargin(displayWaiting, new Insets(30,0,0,60));
-		VBox.setMargin(displayPlayersConnected, new Insets(30,0,0,150));
-		
-		return new Scene(waitingScreen,500,150);
-	}
-	*/
+	
 
 }

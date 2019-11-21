@@ -79,16 +79,15 @@ public class RPLS extends Application {
 	EventHandler<MouseEvent> playSelect;
 	EventHandler<MouseEvent> challengeSelect;
 	EventHandler<ActionEvent> quitButtonHandler;
-	EventHandler<ActionEvent> playAgainHandler;
 	
 	GameInfo gameState = new GameInfo();
 	
 	String ip;
 	int port;
 	int playerID;
+	int sentForID = 0;
 
 	public static void main(String[] args) {
-
 		// TODO Auto-generated method stub
 		launch(args);
 	}
@@ -167,7 +166,7 @@ public class RPLS extends Application {
 							else if (gameState.isDisconnect == true) {
 								
 								actionList.getItems().add("Player " + gameState.disconnectID + " disconnected!");
-								
+																
 								//Remove the ID from the list of clients
 								for (int i = 0; i < clientList.getItems().size(); i++) {
 									if (clientList.getItems().get(i).equals("Player " + gameState.disconnectID)) {
@@ -175,9 +174,16 @@ public class RPLS extends Application {
 										break;
 									}
 								}
+								
+								if (gameState.disconnectID == gameState.sentFor) {
+									primaryStage.setScene(lobbyScene);
+								}
 							}
-							else if (gameState.challengeAccepted = true) {
-								if (gameState.sentBy == playerID || gameState.challengeFor == playerID) {
+							//Check if it is a challenge
+							else if (gameState.challengeAccepted == true) {
+								if (gameState.sentBy == playerID || gameState.sentFor == playerID) {
+									if (sentForID == 0)
+										sentForID = gameState.sentBy;
 									playingScene = getPlayingScene();
 									primaryStage.setScene(playingScene);
 								}
@@ -187,42 +193,13 @@ public class RPLS extends Application {
 								actionList.getItems().add(gameState.message);		//Add the message to the listView
 								playerID = gameState.playerID;							//Get what the id of the user is 
 							}
-
-							//Check if a player disconnected
-							else if(gameState.isDisconnect == true) {
-									playAgainScene = getPlayAgainScene("Opponent has disconnected!");
-									primaryStage.setScene(playAgainScene);
-							}	
-							else {
-								//Check if the GUI should be updated
-								if (gameState.updateClientUI == true) {
-									if(gameState.winnerFound == false) {
-										updateGUI();		//Update the GUI
-									}
-									else {
-										
-										String winnerMessage = "N/A";
-										
-										//Check if the player won or loss and set the message
-										if (playerID == 0) {
-											if (gameState.gameWinner.equals("p1")) 
-												winnerMessage = "You Won!";
-											else 
-												winnerMessage = "You Loss!";
-										}
-										else if (playerID == 1) {
-											if (gameState.gameWinner.equals("p2")) 
-												winnerMessage = "You Won!";
-											else 
-												winnerMessage = "You Loss!";
-										}
-									
-										//set the scene as the play again scene
-										playAgainScene = getPlayAgainScene(winnerMessage);
-										primaryStage.setScene(playAgainScene);
-									}
+							else if (gameState.updateClientUI == true) {
+								updateGUI();
+								if (gameState.sentBy == playerID || gameState.sentFor == playerID) {
+									primaryStage.setScene(lobbyScene);
 								}
 							}
+						
 						});
 						},ip, port);
 					clientConnection.start();
@@ -255,41 +232,51 @@ public class RPLS extends Application {
 	        	else {
 	        		gameState.isChallenge = true;
 	        		gameState.sentBy = playerID;
-		        	gameState.challengeFor = Integer.parseInt(senterID[1]);
+		        	gameState.sentFor = Integer.parseInt(senterID[1]);
+		        	sentForID = Integer.parseInt(senterID[1]);
 		        	clientConnection.send(gameState);
 	        	}
 	        }
         };
 		
+        //Event handler for when user choose what to play
 		this.playSelect = new EventHandler<MouseEvent> () {
 
 			public void handle(MouseEvent event) {
-				
-				if (gameState.have2players == false) {
-					actionList.getItems().add("Please wait for opponent to connect");
-				}
-				else {
-					rockImage.setDisable(true);
-					paperImage.setDisable(true);
-					scissorsImage.setDisable(true);
-					lizardImage.setDisable(true);
-					spockImage.setDisable(true);
+					
+				//Disable the buttons
+				rockImage.setDisable(true);
+				paperImage.setDisable(true);
+				scissorsImage.setDisable(true);
+				lizardImage.setDisable(true);
+				spockImage.setDisable(true);
 
-					ImageView imageview = (ImageView) event.getSource();
-					actionList.getItems().add("You chose to play " + imageview.getId());
-				    playerPlayed.setImage(new Image(imageview.getId() + ".jpg",150,150,false,false));
-				    playerPlayed.setVisible(true);
+				//Set the image for the player 
+				ImageView imageview = (ImageView) event.getSource();
+				playerPlayed.setImage(new Image(imageview.getId() + ".jpg",150,150,false,false));
+				playerPlayed.setVisible(true);
+
+				//get location of player in the list
+				int playerChoiceIndex = 0;
+				for (int i = 0; i < gameState.playerinfo.size(); i++) {
+					if (gameState.playerinfo.get(i).clientID == playerID) 
+						playerChoiceIndex = i;
+		        }
 				    
-				    if (playerID == 0) {
-				    	gameState.p1Plays = imageview.getId();
-				    	gameState.p1Played = true;
-				    }
-				    else if (playerID == 1) {
-				    	gameState.p2Plays = imageview.getId();
-				    	gameState.p2Played = true;
-				    }
-				    clientConnection.send(gameState);	
-				}
+				//Get the string of what the client played
+				gameState.playerinfo.get(playerChoiceIndex).playerPlayed = imageview.getId();
+				    
+				//Set who its sent by and who it is sent for
+				gameState.sentBy = playerID;
+				gameState.sentFor = sentForID;
+				gameState.isChallenge = false;
+				gameState.isPlayed = true;
+				    
+				//Set the client index in the playerinfo arraylist as played
+				gameState.playerinfo.get(playerChoiceIndex).hasPlayed = true;
+				    
+				//Send the object to the server
+				clientConnection.send(gameState);	
 			}
 		};
 		
@@ -308,22 +295,6 @@ public class RPLS extends Application {
 				Platform.exit();
                 System.exit(0);
 			}
-		}; 
-		
-		//Event handler for the play again button
-		this.playAgainHandler = new EventHandler<ActionEvent>() {
-			public void handle(ActionEvent event) {
-				
-				//Tell the server, client chose to play again
-				if (playerID == 0) 
-					gameState.p1PlayAgain = true;
-				else if (playerID == 1)
-					gameState.p2PlayAgain = true;
-				
-				playingScene = getPlayingScene();
-				primaryStage.setScene(playingScene);	
-				clientConnection.send(gameState);
-			} 
 		}; 
 	}
 	
@@ -410,20 +381,20 @@ public class RPLS extends Application {
 		playMenu.getChildren().addAll(promptWhatToPlay,playSelection);
 		
 		//Initialize actionlist and set starting text
-		this.actionList = new ListView<String>();
-		this.actionList.setMaxHeight(400);
+		//this.actionList = new ListView<String>();
+		//this.actionList.setMaxHeight(400);
 		
-		this.actionList.getItems().add("Welcome to RPLS");
-		this.actionList.getItems().add("IP: " + ip + " and port: "+ port);
+		//this.actionList.getItems().add("Welcome to RPLS");
+		//this.actionList.getItems().add("IP: " + ip + " and port: "+ port);
 		
-		this.playerText = new Text("Player Played     Points:0");
+		this.playerText = new Text("      Player Played     ");
 		this.playerText.setStyle("-fx-font: 20 arial");
 		this.playerPlayed = new ImageView(new Image("rock.jpg",150,150,false,false));
 		this.playerPlayed.setVisible(false);
 		this.playerInfo = new VBox();
 		this.playerInfo.getChildren().addAll(playerText, playerPlayed);
 		
-		this.opponentText = new Text("Opponent Played   Points:0");
+		this.opponentText = new Text("     Opponent Played   ");
 		this.opponentText.setStyle("-fx-font: 20 arial");
 		this.opponentPlayed = new ImageView(new Image("rock.jpg",150,150,false,false));
 		this.opponentPlayed.setVisible(false);
@@ -433,7 +404,7 @@ public class RPLS extends Application {
 		//Add elements to the borderpane
 		this.playingScreen.setTop(playingTitle);
 		this.playingScreen.setBottom(playMenu);
-		this.playingScreen.setRight(actionList);    
+		//this.playingScreen.setRight(actionList);    
 		this.playingScreen.setLeft(playerInfo);
 		this.playingScreen.setCenter(opponentInfo);
 		
@@ -452,88 +423,39 @@ public class RPLS extends Application {
 		//Set margins for the playingScreen borderpane
 		BorderPane.setMargin(playingTitle, new Insets(20,0,0,50));
 		BorderPane.setMargin(playMenu, new Insets(0,0,20,55));
-		BorderPane.setMargin(actionList, new Insets(0,10,10,0));	
+		//BorderPane.setMargin(actionList, new Insets(0,10,10,0));	
 		BorderPane.setMargin(playerInfo, new Insets(20,0,0,20));
 		BorderPane.setMargin(opponentInfo, new Insets(20,0,0,80));
 		
 		return new Scene(playingScreen,900,600);
 	}
-
-	public Scene getPlayAgainScene(String message) {
-		
-		Text displayWinOrDisconnect = new Text(message);
-		if (message.equals("Opponent has disconnected!")) {
-			VBox.setMargin(displayWinOrDisconnect, new Insets(20,0,0,60));
-			displayWinOrDisconnect.setStyle("-fx-font: 20 arial");
-		}
-		else {
-			VBox.setMargin(displayWinOrDisconnect, new Insets(20,0,0,100));
-			displayWinOrDisconnect.setStyle("-fx-font: 30 arial");
-		}
-		
-		Text promptPlayAgain = new Text("Play Again?");
-		promptPlayAgain.setStyle("-fx-font: 30 arial");
-		this.playAgainButton = new Button("Play Again");
-		this.playAgainButton.setOnAction(playAgainHandler);
-		this.quitButton = new Button("Quit");
-		this.quitButton.setOnAction(quitButtonHandler);
-		this.playAgainOptions = new HBox();
-		this.playAgainOptions.getChildren().addAll(playAgainButton, quitButton);
-		
-		//Set margins for the HBox
-		HBox.setMargin(playAgainButton, new Insets(0,0,0,35));
-		HBox.setMargin(quitButton, new Insets(0,0,0,75));
-		
-		//Set margins for the VBox
-		VBox.setMargin(promptPlayAgain, new Insets(30,0,0,90));
-		VBox.setMargin(playAgainOptions, new Insets(75,0,0,50));
-		
-		this.playAgainScreen = new VBox();
-		this.playAgainScreen.getChildren().addAll(displayWinOrDisconnect,promptPlayAgain,playAgainOptions);
-		
-		return new Scene(playAgainScreen, 350, 250);
-	}
 	
 	public void updateGUI() {
-		rockImage.setDisable(false);
-		paperImage.setDisable(false);
-		scissorsImage.setDisable(false);
-		lizardImage.setDisable(false);
-		spockImage.setDisable(false);
 		
-		//Check which ID is the player
-		if (playerID == 0) {
-			actionList.getItems().add("Opponent played " + gameState.p2Plays);
-			playerText.setText("Player Played     Points:" + gameState.p1Points);
-			opponentText.setText("Opponent Played   Points:" + gameState.p2Points);
-			opponentPlayed.setImage(new Image( gameState.p2Plays + ".jpg",150,150,false,false));
-			if (gameState.roundWinner.equals("p1")) {
-				actionList.getItems().add("You won the round");
-			}
-			else if (gameState.roundWinner.equals("p2")) {
-				actionList.getItems().add("Opponent won the round");
-			}
-			else {
-				actionList.getItems().add("The round ended in a draw");
-			}
+		//print out the choices of the 2 players
+		int challengeForIndex = 0;
+		int sentFromIndex = 0;
+		
+		//Get the ID from the playerinfo arrayList
+		for (int i = 0; i < gameState.playerinfo.size(); i++) {
+			if (gameState.playerinfo.get(i).clientID == gameState.sentFor)
+				challengeForIndex = i;
+			else if (gameState.playerinfo.get(i).clientID == gameState.sentBy)
+				sentFromIndex = i;
 		}
-		else if (playerID == 1) {
-			actionList.getItems().add("Opponent played " + gameState.p1Plays);
-			playerText.setText("Player Played     Points:" + gameState.p2Points);
-			opponentText.setText("Opponent Played   Points:" + gameState.p1Points);
-			opponentPlayed.setImage(new Image(gameState.p1Plays + ".jpg",150,150,false,false));
-			if (gameState.roundWinner.equals("p2")) {
-				actionList.getItems().add("You won the round");
-			}
-			else if (gameState.roundWinner.equals("p1")) {
-				actionList.getItems().add("Opponent won the round");
-			}
-			else {
-				actionList.getItems().add("The round ended in a draw");
-			}
+		
+		//Add what each user played to the listview
+		actionList.getItems().add("Player " + gameState.sentFor + " has chosen: " + gameState.playerinfo.get(challengeForIndex).playerPlayed);
+		actionList.getItems().add("Player " + gameState.sentBy + " has chosen: " + gameState.playerinfo.get(sentFromIndex).playerPlayed);
+		
+		//print out the result of the game
+		if(gameState.roundWinner.equals("draw")) {
+			actionList.getItems().add("The game of Player " + gameState.sentFor + " and" + " Player " + gameState.sentBy +  " has ended in a draw");
 		}
-
-		opponentPlayed.setVisible(true);
+		else {
+			actionList.getItems().add("Player " + gameState.roundWinner + " won the game.");
+		}
+		actionList.getItems().add("");
 	}
 
 }

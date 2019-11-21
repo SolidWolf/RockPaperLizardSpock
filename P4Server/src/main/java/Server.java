@@ -14,7 +14,7 @@ public class Server {
 	
 	private ArrayList<Integer> reuseID = new ArrayList<Integer>();
 	
-	private int newIDNumber = 0;
+	private int newIDNumber = 1;
 	
 	//Receive information from the client
 	private Consumer<Serializable> callback;
@@ -30,17 +30,16 @@ public class Server {
 	
 	//Constructor for the server class
 	Server(Consumer<Serializable> call, int port) {
-		callback = call;
-		serverPort = port;
+		callback = call;					//Set the call
+		serverPort = port;					//Get the port
 		gameState = new GameInfo();			//Get a new gameInfo state
-		mainServer = new ServerThread();
-		mainServer.start();
+		mainServer = new ServerThread();	//Create the server thread
+		mainServer.start();					//Start the server thread
 	}
 	
 	class ServerThread extends Thread {
 		public void run() {
 			try(ServerSocket serverSocket = new ServerSocket(serverPort)) {
-				System.out.println("Server waiting at port:" + serverPort);
 				
 				while(true) {
 					
@@ -96,23 +95,6 @@ public class Server {
 			}
 		}
 		
-		//Send the game state to all the clients on the server
-		public void updatePlayingClients(GameInfo state, int client1, int client2) {
-			int numClients = clients.size();
-			for(int i = 0; i < numClients; i++) {
-				ClientThread c = clients.get(i);
-				
-				if (c.threadNum == client1 || c.threadNum == client2) {
-					try {
-						state.playerID = c.threadNum;			//Get the id of the thread
-						c.output.reset();
-						c.output.writeObject(state);
-					}
-					catch(Exception e) {}
-				}
-			}
-		}
-		
 		public void run() {
 						
 			try {
@@ -126,20 +108,10 @@ public class Server {
 			GameInfo.PlayerInfo newPlayerInfo = gameState.new PlayerInfo(threadNum); 
 			gameState.playerinfo.add(newPlayerInfo);
 						
-			gameState.isMessage = true;
+			//gameState.isMessage = true;
 			gameState.newPlayer = true;
-			gameState.p1PlayAgain = false;
-			gameState.p2PlayAgain = false;
 			gameState.isDisconnect = false;
 			gameState.playerCount = clients.size();
-			if (clients.size() < 2) {
-				gameState.message = "Waiting for opponent to connect...";
-				gameState.have2players = false;
-			}
-			else {
-				gameState.message = "Opponent Found. Select what to play";		
-				gameState.have2players = true;
-			}
 			updateClients(gameState);
 			callback.accept(gameState);
 			
@@ -150,69 +122,63 @@ public class Server {
 					gameState.newPlayer = false;
 					gameState.isMessage = false;
 					gameState.updateClientUI = false;
+					gameState.updateServerUI = false;
+					gameState.isDisconnect = false;
+	
+					int challengeForIndex = 5;
+					int sentFromIndex = 5;
+					
+					//Get the ID from the playerinfo arrayList
+					for (int i = 0; i < gameState.playerinfo.size(); i++) {
+						if (gameState.playerinfo.get(i).clientID == gameState.sentFor)
+							challengeForIndex = i;
+						else if (gameState.playerinfo.get(i).clientID == gameState.sentBy)
+							sentFromIndex = i;
+					}
+					
+					//Check if what is sent is a challenge
 					if (gameState.isChallenge == true) {
 						
-						int challengeForIndex = 0;
-						int sentFromIndex = 0;
-						
-						//Remove the ID from the playerinfo arrayList
-						for (int i = 0; i < gameState.playerinfo.size(); i++) {
-							if (gameState.playerinfo.get(i).clientID == gameState.challengeFor) 
-								challengeForIndex = i;
-							else if (gameState.playerinfo.get(i).clientID == gameState.sentBy)
-								sentFromIndex = i;
-						}
-						
+						//Set the isPlaying values of the player to true
 						gameState.playerinfo.get(challengeForIndex).isPlaying = true;
 						gameState.playerinfo.get(sentFromIndex).isPlaying = true;
-						
-						updateClients(gameState);
-					}
-					/*		
-					if (gameState.p1Played == true && gameState.p2Played == true) {
-						
-						gameState.roundWinner = gameLogic.roundWinner(gameState.p1Plays, gameState.p2Plays);
-						
-						//Update point if necessary
-						if (gameState.roundWinner.equals("p1")) 
-							gameState.p1Points = gameState.p1Points + 1;
-						else if (gameState.roundWinner.equals("p2"))
-							gameState.p2Points = gameState.p2Points + 1;
-						
-						//Get who won the game 
-						if (gameState.winnerFound = gameLogic.winnerFound(gameState.p1Points, gameState.p2Points) == true) 
-							gameState.gameWinner = gameLogic.whoWon(gameState.p1Points, gameState.p2Points);
-						
-						//Change is the player played back to false
-						gameState.p1Played = false;
-						gameState.p2Played = false;
-						
-						//Allow GUIs to update
-						gameState.updateServerUI = true;
-						gameState.updateClientUI = true;
-						
-						callback.accept(gameState);			//Send to the application thread
-					}
-					else if (gameState.p1PlayAgain == true || gameState.p2PlayAgain == true) {
-						
-						gameState.isDisconnect = false;
-						
-						callback.accept(gameState);
-						
-						if (gameState.p1PlayAgain == true && gameState.p2PlayAgain == true) {
-							gameState = new GameInfo();
-							gameState.isMessage = true;
-							gameState.playerCount = clients.size();
-							gameState.have2players = true;
-							gameState.message = "Opponent has reconnected!";
-						}
-						else {
-							gameState.isMessage = true;
-							gameState.message = "Waiting for opponent...";
-						}
-					} */
-					updateClients(gameState);
+						gameState.challengeAccepted = true;
 
+					}
+					
+					else if (gameState.isPlayed == true) {
+						if(gameState.playerinfo.get(challengeForIndex).hasPlayed == true || gameState.playerinfo.get(sentFromIndex).hasPlayed == true) {
+							gameState.challengeAccepted = false;
+						}
+						
+						//check if both clients have picked a move so to calculate winner
+						if(gameState.playerinfo.get(challengeForIndex).hasPlayed == true && gameState.playerinfo.get(sentFromIndex).hasPlayed == true) {
+							
+							//calculate who won the round
+							gameState.roundWinner = gameLogic.roundWinner(gameState.playerinfo.get(challengeForIndex).playerPlayed, gameState.playerinfo.get(sentFromIndex).playerPlayed);
+							
+							//Check which player won the game
+							if(gameState.roundWinner.equals("p1")) {
+								gameState.roundWinner = String.valueOf(gameState.playerinfo.get(challengeForIndex).clientID);
+							}
+							else if(gameState.roundWinner.equals("p2")) {
+								gameState.roundWinner = String.valueOf(gameState.playerinfo.get(sentFromIndex).clientID);
+							}
+							
+							//Allow GUIs to update
+							gameState.updateServerUI = true;
+							gameState.updateClientUI = true;
+							gameState.playerinfo.get(challengeForIndex).hasPlayed = false;
+							gameState.playerinfo.get(sentFromIndex).hasPlayed = false;
+							gameState.playerinfo.get(challengeForIndex).isPlaying = false;
+							gameState.playerinfo.get(sentFromIndex).isPlaying = false;
+						}
+					}
+					
+					//Update the clients and the server
+					updateClients(gameState);
+					callback.accept(gameState);
+					
 				} catch(Exception e) {
 										
 					//Remove the client from the arrayList

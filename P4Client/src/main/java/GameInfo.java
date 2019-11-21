@@ -5,14 +5,6 @@ import java.util.ArrayList;
 public class GameInfo implements Serializable {
 			
 	private static final long serialVersionUID = 1L;
-	
-	//Variable to store what the players play
-	int p1Points = 0;
-	int p2Points = 0;
-		
-	//Variable to store what the player currently played
-	String p1Plays = "N/A";
-	String p2Plays = "N/A";
 		
 	//Stores who won the round
 	String roundWinner = "N/A";
@@ -36,7 +28,7 @@ public class GameInfo implements Serializable {
 	int disconnectID;
 			
 	//Store the message
-	String message = "N/A";;
+	String message = "N/A";
 		
 	//Store which player it is
 	int playerID;
@@ -73,7 +65,7 @@ public class GameInfo implements Serializable {
 	int sentBy;
 	
 	//Determine who the challenge is for
-	int challengeFor;
+	int sentFor;
 	
 	//Check if the challenge was accepted
 	boolean challengeAccepted = false;
@@ -83,7 +75,6 @@ public class GameInfo implements Serializable {
 		
 		private static final long serialVersionUID = 1L;
 	
-		boolean hasDisconnected = false;
 		boolean hasPlayed = false;
 		boolean isPlaying = false;
 		int clientID;
