@@ -1,12 +1,11 @@
+import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.Dialog;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
@@ -18,6 +17,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import javafx.util.Duration;
 
 public class RPLS extends Application {
 	
@@ -38,7 +38,6 @@ public class RPLS extends Application {
 	VBox screenInfo;
 	VBox lobbyScreen;
 	VBox clientChallenge;
-
 	
 	//Text displayed on the screen
 	Text title;
@@ -81,6 +80,8 @@ public class RPLS extends Application {
 	EventHandler<ActionEvent> quitButtonHandler;
 	
 	GameInfo gameState = new GameInfo();
+	
+	PauseTransition pause = new PauseTransition(Duration.seconds(2));
 	
 	String ip;
 	int port;
@@ -195,9 +196,12 @@ public class RPLS extends Application {
 							}
 							else if (gameState.updateClientUI == true) {
 								updateGUI();
-								if (gameState.sentBy == playerID || gameState.sentFor == playerID) {
-									primaryStage.setScene(lobbyScene);
-								}
+								pause.setOnFinished(event -> {
+									if (gameState.sentBy == playerID || gameState.sentFor == playerID) {
+										primaryStage.setScene(lobbyScene);
+									}
+								});
+								pause.play();
 							}
 						
 						});
@@ -443,6 +447,9 @@ public class RPLS extends Application {
 			else if (gameState.playerinfo.get(i).clientID == gameState.sentBy)
 				sentFromIndex = i;
 		}
+		
+		opponentPlayed.setImage(new Image(gameState.playerinfo.get(challengeForIndex).playerPlayed + ".jpg",150,150,false,false));
+		opponentPlayed.setVisible(true);
 		
 		//Add what each user played to the listview
 		actionList.getItems().add("Player " + gameState.sentFor + " has chosen: " + gameState.playerinfo.get(challengeForIndex).playerPlayed);
