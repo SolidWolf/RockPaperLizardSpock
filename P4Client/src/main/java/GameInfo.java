@@ -87,3 +87,15 @@ public class GameInfo implements Serializable {
 	}
 	
 }
+
+
+
+
+
+
+
+
+
+
+
+

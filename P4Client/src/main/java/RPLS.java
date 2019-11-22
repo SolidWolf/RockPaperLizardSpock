@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
@@ -15,6 +16,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
@@ -166,7 +168,8 @@ public class RPLS extends Application {
 							}
 							else if (gameState.isDisconnect == true) {
 								
-								actionList.getItems().add("Player " + gameState.disconnectID + " disconnected!");
+								actionList.getItems().add("Player " + gameState.disconnectID + " disconnected.");
+								actionList.scrollTo(actionList.getItems().size());
 																
 								//Remove the ID from the list of clients
 								for (int i = 0; i < clientList.getItems().size(); i++) {
@@ -192,6 +195,7 @@ public class RPLS extends Application {
 							//Check if the given gameState includes a message
 							else if (gameState.isMessage == true) {
 								actionList.getItems().add(gameState.message);		//Add the message to the listView
+								actionList.scrollTo(actionList.getItems().size());
 								playerID = gameState.playerID;							//Get what the id of the user is 
 							}
 							else if (gameState.updateClientUI == true) {
@@ -229,9 +233,11 @@ public class RPLS extends Application {
 	        	}
 	        	if (Integer.parseInt(senterID[1]) == playerID) {
 	        		actionList.getItems().add("You cannot challenge yourself!");
+					actionList.scrollTo(actionList.getItems().size());
 	        	}
 	        	else if (gameState.playerinfo.get(challengeForIndex).isPlaying == true) {
-	        		actionList.getItems().add("Playing is already playing");
+	        		actionList.getItems().add("Player is already playing.");
+					actionList.scrollTo(actionList.getItems().size());
 	        	}
 	        	else {
 	        		gameState.isChallenge = true;
@@ -289,7 +295,7 @@ public class RPLS extends Application {
             @Override
             public void handle(WindowEvent t) {
                 Platform.exit();
-                System.exit(0);
+                //System.exit(0);
             }
         });
 		
@@ -297,14 +303,13 @@ public class RPLS extends Application {
 		this.quitButtonHandler = new EventHandler<ActionEvent>() {
 			public void handle(ActionEvent event) {
 				Platform.exit();
-                System.exit(0);
+                //System.exit(0);
 			}
 		}; 
 	}
 	
 	
 	public Scene getLobbyScene() {
-		
 		this.lobbyScreen = new VBox();				//Initialize VBox
 		this.playerView = new HBox();				//Initialize HBox
 		this.clientChallenge = new VBox();			//Initialize HBox
@@ -325,8 +330,9 @@ public class RPLS extends Application {
 		//Initialize actionlist and set starting text
 		this.actionList = new ListView<String>();
 		this.actionList.setMaxHeight(250);
-		this.actionList.getItems().add("Welcome to RPLS");
-		this.actionList.getItems().add("IP: " + ip + " and port: "+ port);
+		this.actionList.getItems().add("Welcome to RPLS!");
+		this.actionList.getItems().add("IP: " + ip + ", Port: "+ port);
+		actionList.scrollTo(actionList.getItems().size());
 		
 		this.playerView.getChildren().addAll(clientChallenge, actionList);
 		this.lobbyScreen.getChildren().addAll(title, playerView);
@@ -344,7 +350,6 @@ public class RPLS extends Application {
 	} 
 	
 	public Scene getPlayingScene() {
-		
 		//Initialize playing screen and set background
 		this.playingScreen = new BorderPane();
 		this.playingScreen.setStyle("-fx-background-color:#eff0e9");
@@ -380,6 +385,7 @@ public class RPLS extends Application {
 		//Create prompt to ask user to 
 		this.promptWhatToPlay = new Text("What would you like to play?");
 		this.promptWhatToPlay.setStyle("-fx-font: 24 arial");
+		this.promptWhatToPlay.setTextAlignment(TextAlignment.CENTER);
 
 		this.playMenu = new VBox();
 		playMenu.getChildren().addAll(promptWhatToPlay,playSelection);
@@ -391,26 +397,32 @@ public class RPLS extends Application {
 		//this.actionList.getItems().add("Welcome to RPLS");
 		//this.actionList.getItems().add("IP: " + ip + " and port: "+ port);
 		
-		this.playerText = new Text("      Player Played     ");
+		this.playerText = new Text("         Player Played     ");
 		this.playerText.setStyle("-fx-font: 20 arial");
 		this.playerPlayed = new ImageView(new Image("rock.jpg",150,150,false,false));
 		this.playerPlayed.setVisible(false);
 		this.playerInfo = new VBox();
 		this.playerInfo.getChildren().addAll(playerText, playerPlayed);
 		
-		this.opponentText = new Text("     Opponent Played   ");
+		this.opponentText = new Text("        Opponent Played   ");
 		this.opponentText.setStyle("-fx-font: 20 arial");
 		this.opponentPlayed = new ImageView(new Image("rock.jpg",150,150,false,false));
 		this.opponentPlayed.setVisible(false);
 		this.opponentInfo = new VBox();
 		this.opponentInfo.getChildren().addAll(opponentText, opponentPlayed);
+
+		HBox moveInfo = new HBox(playerInfo,opponentInfo);
+		moveInfo.setAlignment(Pos.CENTER);
+		moveInfo.setSpacing(50);
+		this.playingScreen.setCenter(moveInfo);
+
 		
 		//Add elements to the borderpane
 		this.playingScreen.setTop(playingTitle);
 		this.playingScreen.setBottom(playMenu);
 		//this.playingScreen.setRight(actionList);    
-		this.playingScreen.setLeft(playerInfo);
-		this.playingScreen.setCenter(opponentInfo);
+		//this.playingScreen.setLeft(playerInfo);
+		//this.playingScreen.setCenter(opponentInfo);
 		
 		//Set margins for the Vbox
 		VBox.setMargin(promptWhatToPlay, new Insets(0,0,15,235));
@@ -454,15 +466,19 @@ public class RPLS extends Application {
 		//Add what each user played to the listview
 		actionList.getItems().add("Player " + gameState.sentFor + " has chosen: " + gameState.playerinfo.get(challengeForIndex).playerPlayed);
 		actionList.getItems().add("Player " + gameState.sentBy + " has chosen: " + gameState.playerinfo.get(sentFromIndex).playerPlayed);
+		actionList.scrollTo(actionList.getItems().size());
 		
 		//print out the result of the game
 		if(gameState.roundWinner.equals("draw")) {
-			actionList.getItems().add("The game of Player " + gameState.sentFor + " and" + " Player " + gameState.sentBy +  " has ended in a draw");
+			actionList.getItems().add("The game of Player " + gameState.sentFor + " and" + " Player " + gameState.sentBy +  "\nhas ended in a draw!");
+			actionList.scrollTo(actionList.getItems().size());
 		}
 		else {
-			actionList.getItems().add("Player " + gameState.roundWinner + " won the game.");
+			actionList.getItems().add("Player " + gameState.roundWinner + " won the game!");
+			actionList.scrollTo(actionList.getItems().size());
 		}
 		actionList.getItems().add("");
+		actionList.scrollTo(actionList.getItems().size());
 	}
 
 }
