@@ -1,54 +1,84 @@
 import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 
 
 class RPLSTest {
-	
+	Client c;
 	static GameLogic gameLogic;
-	
-	@BeforeAll
-	static void init() {
+	static RPLS testR;
+	static GameInfo testGameInfo;
+	static Server testS;
+
+
+	@BeforeEach
+	void init() {
+		c = new Client(null, "127.0.0.1", 6);
 		gameLogic = new GameLogic();
+		testR = new RPLS();
+		testGameInfo = new GameInfo();
+		testS = new Server(null, 0);
 	}
 
 	@Test
-	void testServerName() {
-		Server s = new Server(null, 5555);
-		assertEquals("Server", s.getClass().getName(), "Class name does not match");
+	void testClientClassName() {
+		assertEquals("Client", c.getClass().getName(), "The class name does not match");
 	}
-	
+
 	@Test
-	void testServerConstructor() {
-		Server s = new Server(null, 5555);
-		assertEquals(5555, s.serverPort, "Port does not match the constructor");
+	void testClientConstructor() {
+		assertEquals("127.0.0.1", c.ip, "The ip address does not match");
+		assertEquals(6, c.port, "The port does not match");
 	}
-	
+
 	@Test
-	void testGameLogicRoundWinner() {
-		assertEquals("draw", gameLogic.roundWinner("paper", "paper"), "Winner was not draw");
-		assertEquals("p1", gameLogic.roundWinner("paper", "rock"),"Winner was not p1");
-		assertEquals("p2", gameLogic.roundWinner("spock", "lizard"),"Winner was not p2");
+	void testGameInfo() {
+		GameInfo gameInfo = new GameInfo();
+		assertEquals("GameInfo", gameInfo.getClass().getName(), "The class name does not match");
 	}
-	
+
 	@Test
-	void testServerWinnerFound() {
-		assertEquals(false, gameLogic.winnerFound(2, 1), "Winner was found");
-		assertEquals(true, gameLogic.winnerFound(2, 3), "Winner was not found");
+	void testChallengeAccepted() {
+		assertFalse(testGameInfo.challengeAccepted, "challengeAccepted should be false");
 	}
-	
+
 	@Test
-	void testServerWhoWon() {
-		assertEquals("p1", gameLogic.whoWon(3, 1), "p2 won");
-		assertEquals("p2", gameLogic.whoWon(2, 3), "p1 won");
+	void testHave2players() {
+		assertFalse(testGameInfo.have2players, "have2players should be false");
 	}
-	
+
 	@Test
-	void testPlayerFound() {
-		assertEquals(true, gameLogic.playersFound(2), "Player not found");
-		assertEquals(false, gameLogic.playersFound(1), "Player found");
+	void testnewPlayer() {
+		assertFalse(testGameInfo.newPlayer,"newPlayer should be false;");
 	}
+
+	@Test
+	void testPlayerInfo() {
+		assertFalse(testGameInfo.isPlayed, "isPlayed should be false");
+	}
+
+	@Test
+	void testUpdateServerUI() {
+		assertFalse(testGameInfo.updateServerUI, "updateServerUI should be false");
+	}
+
+	@Test
+	void testp2Played(){
+		assertFalse(testGameInfo.p2Played, "p2Played should be false");
+	}
+
+	@Test
+	void testp1Played() {
+		assertFalse(testGameInfo.p1Played, "p1Played should be false");
+	}
+
+	@Test
+	void testClients() {
+		assertEquals(testS.clients.size(),0,"Clients array list should be 0");
+
+	}
+
 
 }
