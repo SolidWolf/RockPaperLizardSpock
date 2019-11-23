@@ -10,9 +10,6 @@ public class GameInfo implements Serializable {
 	//Stores who won the game
 	String gameWinner = "N/A";
 	
-	//Store if 2 players are connected
-	boolean have2players = false;
-	
 	//Store if either player won 
 	boolean winnerFound = false;
 	
@@ -42,10 +39,6 @@ public class GameInfo implements Serializable {
 	
 	//Check if the client UI should be updated
 	boolean updateClientUI = false;
-	
-	//Store if p1 or p2 chose to play again
-	boolean p1PlayAgain = false;
-	boolean p2PlayAgain = false;
 	
 	//Store if the player just connected
 	boolean newPlayer = false;

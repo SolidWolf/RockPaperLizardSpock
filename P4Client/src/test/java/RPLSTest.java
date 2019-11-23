@@ -63,7 +63,6 @@ class RPLSTest {
 		GameInfo gameInfo = new GameInfo();
 		assertEquals("N/A",gameInfo.roundWinner,"wrong data value");
 		assertEquals("N/A",gameInfo.gameWinner,"wrong data value");
-		assertEquals(false,gameInfo.have2players,"wrong data value");
 		assertEquals(false,gameInfo.winnerFound,"wrong data value");
 	}
 
@@ -88,14 +87,11 @@ class RPLSTest {
 	@Test
 	void testGameInfoVar4() {
 		GameInfo gameInfo = new GameInfo();
-		assertEquals(false,gameInfo.p1PlayAgain,"wrong data value");
-		assertEquals(false,gameInfo.p2PlayAgain,"wrong data value");
 		assertEquals(false,gameInfo.newPlayer,"wrong data value");
 		assertEquals(false,gameInfo.isChallenge,"wrong data value");
 		assertEquals(false,gameInfo.isPlayed,"wrong data value");
 		assertEquals(false,gameInfo.challengeAccepted,"wrong data value");
 	}
-
 
 	@Test
 	void testPlayerInfo() {

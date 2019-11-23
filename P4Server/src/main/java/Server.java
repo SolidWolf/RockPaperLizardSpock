@@ -96,7 +96,7 @@ public class Server {
 		}
 		
 		public void run() {
-						
+				
 			try {
 				//Initialize the input and output streams
 				input = new ObjectInputStream(connection.getInputStream());
@@ -116,99 +116,107 @@ public class Server {
 			callback.accept(gameState);
 			
 			while(true) {
+				
 				try {
+						
 					gameState = (GameInfo) input.readObject();
 					
-					gameState.newPlayer = false;
-					gameState.isMessage = false;
-					gameState.updateClientUI = false;
-					gameState.updateServerUI = false;
-					gameState.isDisconnect = false;
+					synchronized(gameState) {
+					
+						gameState.newPlayer = false;
+						gameState.isMessage = false;
+						gameState.updateClientUI = false;
+						gameState.updateServerUI = false;
+						gameState.isDisconnect = false;
+		
+						int challengeForIndex = 0;
+						int sentFromIndex = 0;
+						
+						//Get the ID from the playerinfo arrayList
+						for (int i = 0; i < gameState.playerinfo.size(); i++) {
+							if (gameState.playerinfo.get(i).clientID == gameState.sentFor)
+								challengeForIndex = i;
+							else if (gameState.playerinfo.get(i).clientID == gameState.sentBy)
+								sentFromIndex = i;
+						}
+						
+						//Check if what is sent is a challenge
+						if (gameState.isChallenge == true) {
+							
+							//Set the isPlaying values of the player to true
+							gameState.playerinfo.get(challengeForIndex).isPlaying = true;
+							gameState.playerinfo.get(sentFromIndex).isPlaying = true;
+							gameState.challengeAccepted = true;
 	
-					int challengeForIndex = 5;
-					int sentFromIndex = 5;
-					
-					//Get the ID from the playerinfo arrayList
-					for (int i = 0; i < gameState.playerinfo.size(); i++) {
-						if (gameState.playerinfo.get(i).clientID == gameState.sentFor)
-							challengeForIndex = i;
-						else if (gameState.playerinfo.get(i).clientID == gameState.sentBy)
-							sentFromIndex = i;
-					}
-					
-					//Check if what is sent is a challenge
-					if (gameState.isChallenge == true) {
-						
-						//Set the isPlaying values of the player to true
-						gameState.playerinfo.get(challengeForIndex).isPlaying = true;
-						gameState.playerinfo.get(sentFromIndex).isPlaying = true;
-						gameState.challengeAccepted = true;
-
-					}
-					
-					else if (gameState.isPlayed == true) {
-						if(gameState.playerinfo.get(challengeForIndex).hasPlayed == true || gameState.playerinfo.get(sentFromIndex).hasPlayed == true) {
-							gameState.challengeAccepted = false;
 						}
 						
-						//check if both clients have picked a move so to calculate winner
-						if(gameState.playerinfo.get(challengeForIndex).hasPlayed == true && gameState.playerinfo.get(sentFromIndex).hasPlayed == true) {
-							
-							//calculate who won the round
-							gameState.roundWinner = gameLogic.roundWinner(gameState.playerinfo.get(challengeForIndex).playerPlayed, gameState.playerinfo.get(sentFromIndex).playerPlayed);
-							
-							//Check which player won the game
-							if(gameState.roundWinner.equals("p1")) {
-								gameState.roundWinner = String.valueOf(gameState.playerinfo.get(challengeForIndex).clientID);
-							}
-							else if(gameState.roundWinner.equals("p2")) {
-								gameState.roundWinner = String.valueOf(gameState.playerinfo.get(sentFromIndex).clientID);
+						else if (gameState.isPlayed == true) {
+							if(gameState.playerinfo.get(challengeForIndex).hasPlayed == true || gameState.playerinfo.get(sentFromIndex).hasPlayed == true) {
+								gameState.challengeAccepted = false;
 							}
 							
-							//Allow GUIs to update
-							gameState.updateServerUI = true;
-							gameState.updateClientUI = true;
-							gameState.playerinfo.get(challengeForIndex).hasPlayed = false;
-							gameState.playerinfo.get(sentFromIndex).hasPlayed = false;
-							gameState.playerinfo.get(challengeForIndex).isPlaying = false;
-							gameState.playerinfo.get(sentFromIndex).isPlaying = false;
+							//check if both clients have picked a move so to calculate winner
+							if(gameState.playerinfo.get(challengeForIndex).hasPlayed == true && gameState.playerinfo.get(sentFromIndex).hasPlayed == true) {
+								
+								//calculate who won the round
+								gameState.roundWinner = gameLogic.roundWinner(gameState.playerinfo.get(challengeForIndex).playerPlayed, gameState.playerinfo.get(sentFromIndex).playerPlayed);
+								
+								//Check which player won the game
+								if(gameState.roundWinner.equals("p1")) {
+									gameState.roundWinner = String.valueOf(gameState.playerinfo.get(challengeForIndex).clientID);
+								}
+								else if(gameState.roundWinner.equals("p2")) {
+									gameState.roundWinner = String.valueOf(gameState.playerinfo.get(sentFromIndex).clientID);
+								}
+								
+								//Allow GUIs to update
+								gameState.updateServerUI = true;
+								gameState.updateClientUI = true;
+								gameState.playerinfo.get(challengeForIndex).hasPlayed = false;
+								gameState.playerinfo.get(sentFromIndex).hasPlayed = false;
+								gameState.playerinfo.get(challengeForIndex).isPlaying = false;
+								gameState.playerinfo.get(sentFromIndex).isPlaying = false;
+							}
 						}
+						
+						//Update the clients and the server
+						updateClients(gameState);
+						callback.accept(gameState);
 					}
-					
-					//Update the clients and the server
-					updateClients(gameState);
-					callback.accept(gameState);
 					
 				} catch(Exception e) {
-										
-					//Remove the client from the arrayList
-					clients.remove(this);
-					
-					//Add the ID to the list of available used IDs
-					reuseID.add(this.threadNum);	
-					
-					//Remove the ID from the playerinfo arrayList
-					for (int i = 0; i < gameState.playerinfo.size(); i++) {
-						if (gameState.playerinfo.get(i).clientID == this.threadNum) {
-							gameState.playerinfo.remove(i);
-							break;
+								
+					synchronized(gameState) {
+
+						//Remove the client from the arrayList
+						clients.remove(this);
+						
+						//Add the ID to the list of available used IDs
+						reuseID.add(this.threadNum);	
+						
+						//Remove the ID from the playerinfo arrayList
+						for (int i = 0; i < gameState.playerinfo.size(); i++) {
+							if (gameState.playerinfo.get(i).clientID == this.threadNum) {
+								gameState.playerinfo.remove(i);
+								break;
+							}
 						}
+						
+						//Determine who disconnected and sent it to the GUI
+						gameState.newPlayer = false;
+						gameState.disconnectID = this.threadNum;
+						gameState.isDisconnect = true;
+						
+						gameState.playerCount = clients.size();		//update number of players
+						
+						//Update the server GUI
+						callback.accept(gameState);	
+						
+						//Update the clients
+						updateClients(gameState);
+										
+				    	break;				//End the loop
 					}
-					
-					//Determine who disconnected and sent it to the GUI
-					gameState.newPlayer = false;
-					gameState.disconnectID = this.threadNum;
-					gameState.isDisconnect = true;
-					
-					gameState.playerCount = clients.size();		//update number of players
-					
-					//Update the server GUI
-					callback.accept(gameState);	
-					
-					//Update the clients
-					updateClients(gameState);
-									
-			    	break;				//End the loop
 				}
 			}
 		}

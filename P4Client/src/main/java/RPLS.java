@@ -83,6 +83,7 @@ public class RPLS extends Application {
 	
 	GameInfo gameState = new GameInfo();
 	
+	//Pause transition of 2 seconds
 	PauseTransition pause = new PauseTransition(Duration.seconds(2));
 	
 	String ip;
@@ -185,29 +186,38 @@ public class RPLS extends Application {
 							}
 							//Check if it is a challenge
 							else if (gameState.challengeAccepted == true) {
+								
+								//Check if the challenge is for the certain players
 								if (gameState.sentBy == playerID || gameState.sentFor == playerID) {
-									if (sentForID == 0)
+									
+									//Get the ID of the opponent
+									if (gameState.sentBy != playerID)
 										sentForID = gameState.sentBy;
+									
+									//Set the scene
 									playingScene = getPlayingScene();
 									primaryStage.setScene(playingScene);
 								}
 							}
-							//Check if the given gameState includes a message
-							else if (gameState.isMessage == true) {
-								actionList.getItems().add(gameState.message);		//Add the message to the listView
-								actionList.scrollTo(actionList.getItems().size());
-								playerID = gameState.playerID;							//Get what the id of the user is 
-							}
+							//Check if the UI should be updated
 							else if (gameState.updateClientUI == true) {
-								updateGUI();
-								pause.setOnFinished(event -> {
-									if (gameState.sentBy == playerID || gameState.sentFor == playerID) {
-										primaryStage.setScene(lobbyScene);
-									}
-								});
-								pause.play();
+								
+								updateGUI();		//Update the action list for all clients
+								
+								//Check if that player should get updated
+								if (gameState.sentBy == playerID || gameState.sentFor == playerID) {
+									
+									updateOpponent();			//update the image for the opponent
+
+									pause.setOnFinished(event -> {
+
+										if (gameState.sentBy == playerID || gameState.sentFor == playerID) 
+											primaryStage.setScene(lobbyScene);
+									});
+									
+									pause.play();			//Set to play again 
+								}
 							}
-						
 						});
 						},ip, port);
 					clientConnection.start();
@@ -218,34 +228,39 @@ public class RPLS extends Application {
  		});
 		
 		
-		//event handler for the client list                        //Edit: Angel
+		//event handler for the client list                        
         this.challengeSelect = new EventHandler<MouseEvent> () {
 
 	        @Override
 	        public void handle(MouseEvent event) {
 
-	        	String[] senterID = clientList.getSelectionModel().getSelectedItem().split(" ", 2);
-	        	int challengeForIndex = 0;
+	        	try {
+	        		String[] senterID = clientList.getSelectionModel().getSelectedItem().split(" ", 2);
+		        	int challengeForIndex = 0;
+		        	
+		        	for (int i = 0; i < gameState.playerinfo.size(); i++) {
+						if (gameState.playerinfo.get(i).clientID == Integer.parseInt(senterID[1])) 
+							challengeForIndex = i;
+		        	}
+		        	if (Integer.parseInt(senterID[1]) == playerID) {
+		        		actionList.getItems().add("You cannot challenge yourself!");
+						actionList.scrollTo(actionList.getItems().size());
+		        	}
+		        	else if (gameState.playerinfo.get(challengeForIndex).isPlaying == true) {
+		        		actionList.getItems().add("Player is already playing.");
+						actionList.scrollTo(actionList.getItems().size());
+		        	}
+		        	else {
+		        		gameState.isChallenge = true;
+		        		gameState.sentBy = playerID;
+			        	gameState.sentFor = Integer.parseInt(senterID[1]);
+			        	sentForID = Integer.parseInt(senterID[1]);
+			        	clientConnection.send(gameState);
+		        	}
+	        	} catch (Exception e) {
+	        		actionList.getItems().add("Please select a player to play");
+	        	}
 	        	
-	        	for (int i = 0; i < gameState.playerinfo.size(); i++) {
-					if (gameState.playerinfo.get(i).clientID == Integer.parseInt(senterID[1])) 
-						challengeForIndex = i;
-	        	}
-	        	if (Integer.parseInt(senterID[1]) == playerID) {
-	        		actionList.getItems().add("You cannot challenge yourself!");
-					actionList.scrollTo(actionList.getItems().size());
-	        	}
-	        	else if (gameState.playerinfo.get(challengeForIndex).isPlaying == true) {
-	        		actionList.getItems().add("Player is already playing.");
-					actionList.scrollTo(actionList.getItems().size());
-	        	}
-	        	else {
-	        		gameState.isChallenge = true;
-	        		gameState.sentBy = playerID;
-		        	gameState.sentFor = Integer.parseInt(senterID[1]);
-		        	sentForID = Integer.parseInt(senterID[1]);
-		        	clientConnection.send(gameState);
-	        	}
 	        }
         };
 		
@@ -295,19 +310,11 @@ public class RPLS extends Application {
             @Override
             public void handle(WindowEvent t) {
                 Platform.exit();
-                //System.exit(0);
+                System.exit(0);
             }
         });
 		
-		//Event handler for the quit button
-		this.quitButtonHandler = new EventHandler<ActionEvent>() {
-			public void handle(ActionEvent event) {
-				Platform.exit();
-                //System.exit(0);
-			}
-		}; 
 	}
-	
 	
 	public Scene getLobbyScene() {
 		this.lobbyScreen = new VBox();				//Initialize VBox
@@ -332,7 +339,7 @@ public class RPLS extends Application {
 		this.actionList.setMaxHeight(250);
 		this.actionList.getItems().add("Welcome to RPLS!");
 		this.actionList.getItems().add("IP: " + ip + ", Port: "+ port);
-		actionList.scrollTo(actionList.getItems().size());
+		this.actionList.scrollTo(actionList.getItems().size());
 		
 		this.playerView.getChildren().addAll(clientChallenge, actionList);
 		this.lobbyScreen.getChildren().addAll(title, playerView);
@@ -390,17 +397,11 @@ public class RPLS extends Application {
 		this.playMenu = new VBox();
 		playMenu.getChildren().addAll(promptWhatToPlay,playSelection);
 		
-		//Initialize actionlist and set starting text
-		//this.actionList = new ListView<String>();
-		//this.actionList.setMaxHeight(400);
-		
-		//this.actionList.getItems().add("Welcome to RPLS");
-		//this.actionList.getItems().add("IP: " + ip + " and port: "+ port);
-		
 		this.playerText = new Text("         Player Played     ");
 		this.playerText.setStyle("-fx-font: 20 arial");
 		this.playerPlayed = new ImageView(new Image("rock.jpg",150,150,false,false));
 		this.playerPlayed.setVisible(false);
+		
 		this.playerInfo = new VBox();
 		this.playerInfo.getChildren().addAll(playerText, playerPlayed);
 		
@@ -414,16 +415,12 @@ public class RPLS extends Application {
 		HBox moveInfo = new HBox(playerInfo,opponentInfo);
 		moveInfo.setAlignment(Pos.CENTER);
 		moveInfo.setSpacing(50);
-		this.playingScreen.setCenter(moveInfo);
 
-		
 		//Add elements to the borderpane
 		this.playingScreen.setTop(playingTitle);
 		this.playingScreen.setBottom(playMenu);
-		//this.playingScreen.setRight(actionList);    
-		//this.playingScreen.setLeft(playerInfo);
-		//this.playingScreen.setCenter(opponentInfo);
-		
+		this.playingScreen.setCenter(moveInfo);
+
 		//Set margins for the Vbox
 		VBox.setMargin(promptWhatToPlay, new Insets(0,0,15,235));
 		VBox.setMargin(opponentPlayed, new Insets(40,0,0,40));
@@ -439,7 +436,6 @@ public class RPLS extends Application {
 		//Set margins for the playingScreen borderpane
 		BorderPane.setMargin(playingTitle, new Insets(20,0,0,50));
 		BorderPane.setMargin(playMenu, new Insets(0,0,20,55));
-		//BorderPane.setMargin(actionList, new Insets(0,10,10,0));	
 		BorderPane.setMargin(playerInfo, new Insets(20,0,0,20));
 		BorderPane.setMargin(opponentInfo, new Insets(20,0,0,80));
 		
@@ -454,31 +450,42 @@ public class RPLS extends Application {
 		
 		//Get the ID from the playerinfo arrayList
 		for (int i = 0; i < gameState.playerinfo.size(); i++) {
-			if (gameState.playerinfo.get(i).clientID == gameState.sentFor)
+			if (gameState.playerinfo.get(i).clientID == sentForID)
 				challengeForIndex = i;
 			else if (gameState.playerinfo.get(i).clientID == gameState.sentBy)
 				sentFromIndex = i;
 		}
-		
-		opponentPlayed.setImage(new Image(gameState.playerinfo.get(challengeForIndex).playerPlayed + ".jpg",150,150,false,false));
-		opponentPlayed.setVisible(true);
+			
+		this.actionList.getItems().add("");
 		
 		//Add what each user played to the listview
-		actionList.getItems().add("Player " + gameState.sentFor + " has chosen: " + gameState.playerinfo.get(challengeForIndex).playerPlayed);
-		actionList.getItems().add("Player " + gameState.sentBy + " has chosen: " + gameState.playerinfo.get(sentFromIndex).playerPlayed);
-		actionList.scrollTo(actionList.getItems().size());
+		this.actionList.getItems().add("Player " + gameState.sentFor + " played " + gameState.playerinfo.get(challengeForIndex).playerPlayed);
+		this.actionList.getItems().add("Player " + gameState.sentBy + " played " + gameState.playerinfo.get(sentFromIndex).playerPlayed);
 		
 		//print out the result of the game
 		if(gameState.roundWinner.equals("draw")) {
-			actionList.getItems().add("The game of Player " + gameState.sentFor + " and" + " Player " + gameState.sentBy +  "\nhas ended in a draw!");
-			actionList.scrollTo(actionList.getItems().size());
+			this.actionList.getItems().add("The game of Player " + gameState.sentFor + " and" + " Player " + gameState.sentBy +  "\nhas ended in a draw!");
 		}
 		else {
-			actionList.getItems().add("Player " + gameState.roundWinner + " won the game!");
-			actionList.scrollTo(actionList.getItems().size());
-		}
-		actionList.getItems().add("");
-		actionList.scrollTo(actionList.getItems().size());
+			this.actionList.getItems().add("Player " + gameState.roundWinner + " won the game!");
+		}		
 	}
+	
+	public void updateOpponent() {
+		
+		//print out the choices of the 2 players
+		int challengeForIndex = 0;
+				
+		//Get the ID from the playerinfo arrayList
+		for (int i = 0; i < gameState.playerinfo.size(); i++) {
+			if (gameState.playerinfo.get(i).clientID == sentForID)
+				challengeForIndex = i;
+		}
+		
+		//Set the image for what the opponent played
+		opponentPlayed.setImage(new Image(gameState.playerinfo.get(challengeForIndex).playerPlayed + ".jpg",150,150,false,false));
+		opponentPlayed.setVisible(true);
+	}
+
 
 }
