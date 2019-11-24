@@ -82,7 +82,7 @@ public class Server {
 		}
 		
 		//Send the game state to all the clients on the server
-		public void updateClients(GameInfo state) {
+		public synchronized void updateClients(GameInfo state) {
 			int numClients = clients.size();
 			for(int i = 0; i < numClients; i++) {
 				ClientThread c = clients.get(i);
@@ -104,16 +104,18 @@ public class Server {
 				connection.setTcpNoDelay(true);	
 			}catch( Exception e) {}
 			
-			//Create a new instance of PlayerInfo with the ID and add to the arraylist
-			GameInfo.PlayerInfo newPlayerInfo = gameState.new PlayerInfo(threadNum); 
-			gameState.playerinfo.add(newPlayerInfo);
-						
-			//gameState.isMessage = true;
-			gameState.newPlayer = true;
-			gameState.isDisconnect = false;
-			gameState.playerCount = clients.size();
-			updateClients(gameState);
-			callback.accept(gameState);
+			synchronized (gameState) {
+				//Create a new instance of PlayerInfo with the ID and add to the arraylist
+				GameInfo.PlayerInfo newPlayerInfo = gameState.new PlayerInfo(threadNum); 
+				gameState.playerinfo.add(newPlayerInfo);
+							
+				//gameState.isMessage = true;
+				gameState.newPlayer = true;
+				gameState.isDisconnect = false;
+				gameState.playerCount = clients.size();
+				updateClients(gameState);
+				callback.accept(gameState);
+			}
 			
 			while(true) {
 				
@@ -142,14 +144,24 @@ public class Server {
 						
 						//Check if what is sent is a challenge
 						if (gameState.isChallenge == true) {
-							
 							//Set the isPlaying values of the player to true
 							gameState.playerinfo.get(challengeForIndex).isPlaying = true;
 							gameState.playerinfo.get(sentFromIndex).isPlaying = true;
 							gameState.challengeAccepted = true;
-	
 						}
-						
+						else if (gameState.resetIsPlayed == true) {
+							
+							
+							//Get the ID from the playerinfo arrayList
+							for (int i = 0; i < gameState.playerinfo.size(); i++) {
+								if (gameState.playerinfo.get(i).clientID == gameState.sentBy)
+									sentFromIndex = i;
+							}
+							
+							gameState.playerinfo.get(sentFromIndex).hasPlayed = false;
+							gameState.playerinfo.get(sentFromIndex).isPlaying = false;
+							gameState.resetIsPlayed = false;
+						}
 						else if (gameState.isPlayed == true) {
 							if(gameState.playerinfo.get(challengeForIndex).hasPlayed == true || gameState.playerinfo.get(sentFromIndex).hasPlayed == true) {
 								gameState.challengeAccepted = false;
@@ -193,10 +205,12 @@ public class Server {
 						
 						//Add the ID to the list of available used IDs
 						reuseID.add(this.threadNum);	
-						
+												
 						//Remove the ID from the playerinfo arrayList
 						for (int i = 0; i < gameState.playerinfo.size(); i++) {
 							if (gameState.playerinfo.get(i).clientID == this.threadNum) {
+								gameState.playerinfo.get(i).isPlaying = false;
+								gameState.playerinfo.get(i).hasPlayed = false;
 								gameState.playerinfo.remove(i);
 								break;
 							}

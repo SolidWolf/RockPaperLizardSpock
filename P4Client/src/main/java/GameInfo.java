@@ -33,8 +33,8 @@ public class GameInfo implements Serializable {
 	int playerCount = 0;
 		
 	//Variable to store if the players has played
-	boolean p1Played = false;
-	boolean p2Played = false;
+	//boolean p1Played = false;
+	//boolean p2Played = false;
 	
 	//Check if the server UI should be updated
 	boolean updateServerUI = false;
@@ -53,6 +53,9 @@ public class GameInfo implements Serializable {
 		
 	//Determine if what is sent is a play selection
 	boolean isPlayed = false;
+	
+	//Reset the isPlayed of the player
+	boolean resetIsPlayed = false;
 		
 	//Determine who sent the Object
 	int sentBy;

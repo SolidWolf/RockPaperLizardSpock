@@ -2,8 +2,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-
-
 class RPLSTest {
 	Client client;
 	Client client2;
@@ -78,8 +76,6 @@ class RPLSTest {
 	@Test
 	void testGameInfoVar3() {
 		GameInfo gameInfo = new GameInfo();
-		assertEquals(false,gameInfo.p1Played,"wrong data value");
-		assertEquals(false,gameInfo.p2Played,"wrong data value");
 		assertEquals(false,gameInfo.updateServerUI,"wrong data value");
 		assertEquals(false,gameInfo.updateClientUI,"wrong data value");
 	}

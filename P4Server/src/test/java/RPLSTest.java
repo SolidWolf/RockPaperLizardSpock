@@ -31,12 +31,20 @@ class RPLSTest {
 
 	@Test
 	void testnewPlayer() {
-		assertFalse(testGameInfo.newPlayer,"newPlayer should be false;");
+		assertFalse(testGameInfo.newPlayer,"newPlayer should be false");
+		
+		testGameInfo.newPlayer = true;
+		
+		assertTrue(testGameInfo.newPlayer,"newPlayer should be true");
 	}
 
 	@Test
 	void testPlayerInfo() {
 		assertFalse(testGameInfo.isPlayed, "isPlayed should be false");
+		
+		testGameInfo.isPlayed = true;
+		
+		assertTrue(testGameInfo.isPlayed,"isPlayed should be true");
 	}
 
 	@Test
@@ -47,7 +55,6 @@ class RPLSTest {
 	@Test
 	void testClients() {
 		assertEquals(testS.clients.size(),0,"Clients array list should be 0");
-
 	}
 
 

@@ -155,67 +155,84 @@ public class RPLS extends Application {
 					clientConnection = new Client(data->{
 						Platform.runLater(()->{
 							gameState = (GameInfo) data;
+							
+							synchronized(gameState) {
 
-							//Update the clients that user can challenge
-							if(gameState.newPlayer == true) {
-								playerID = gameState.playerID;							//Get what the id of the user is 
-								for(GameInfo.PlayerInfo i : gameState.playerinfo) {
-									String ID = Integer.toString(i.clientID);
-									if(clientList.getItems().contains("Player " + ID)) {
-										continue;							
+								//Update the clients that user can challenge
+								if(gameState.newPlayer == true) {
+									playerID = gameState.playerID;							//Get what the id of the user is 
+									for(GameInfo.PlayerInfo i : gameState.playerinfo) {
+										String ID = Integer.toString(i.clientID);
+										if(clientList.getItems().contains("Player " + ID)) {
+											continue;							
+										} 
+										clientList.getItems().add("Player " + ID);
 									} 
-									clientList.getItems().add("Player " + ID);
-								} 
-							}
-							else if (gameState.isDisconnect == true) {
-								
-								actionList.getItems().add("Player " + gameState.disconnectID + " disconnected.");
-								actionList.scrollTo(actionList.getItems().size());
-																
-								//Remove the ID from the list of clients
-								for (int i = 0; i < clientList.getItems().size(); i++) {
-									if (clientList.getItems().get(i).equals("Player " + gameState.disconnectID)) {
-										clientList.getItems().remove(i);
-										break;
+								}
+								else if (gameState.isDisconnect == true) {
+									
+									actionList.getItems().add("Player " + gameState.disconnectID + " disconnected.");
+																	
+									//Remove the ID from the list of clients
+									for (int i = 0; i < clientList.getItems().size(); i++) {
+										if (clientList.getItems().get(i).equals("Player " + gameState.disconnectID)) {
+											clientList.getItems().remove(i);
+											break;
+										}
+									}
+									
+									if (gameState.disconnectID == sentForID) {
+										
+										sentForID = 0;
+
+										//update gameState
+										gameState.resetIsPlayed = true;
+										gameState.sentBy = playerID;
+										gameState.isChallenge = false;
+										gameState.challengeAccepted = false;
+										
+										//Send to the server
+							        	clientConnection.send(gameState);
+										
+							        	//set the scene
+										primaryStage.setScene(lobbyScene);
 									}
 								}
-								
-								if (gameState.disconnectID == gameState.sentFor) {
-									primaryStage.setScene(lobbyScene);
+								//Check if it is a challenge
+								else if (gameState.challengeAccepted == true) {
+									
+									//Check if the challenge is for the certain players
+									if (gameState.sentBy == playerID || gameState.sentFor == playerID) {
+										
+										//Get the ID of the opponent
+										if (gameState.sentBy != playerID)
+											sentForID = gameState.sentBy;
+										
+										//Set the scene
+										playingScene = getPlayingScene();
+										primaryStage.setScene(playingScene);
+									}
 								}
-							}
-							//Check if it is a challenge
-							else if (gameState.challengeAccepted == true) {
-								
-								//Check if the challenge is for the certain players
-								if (gameState.sentBy == playerID || gameState.sentFor == playerID) {
+								//Check if the UI should be updated
+								else if (gameState.updateClientUI == true) {
 									
-									//Get the ID of the opponent
-									if (gameState.sentBy != playerID)
-										sentForID = gameState.sentBy;
+									updateGUI();		//Update the action list for all clients
 									
-									//Set the scene
-									playingScene = getPlayingScene();
-									primaryStage.setScene(playingScene);
-								}
-							}
-							//Check if the UI should be updated
-							else if (gameState.updateClientUI == true) {
-								
-								updateGUI();		//Update the action list for all clients
-								
-								//Check if that player should get updated
-								if (gameState.sentBy == playerID || gameState.sentFor == playerID) {
-									
-									updateOpponent();			//update the image for the opponent
-
-									pause.setOnFinished(event -> {
-
-										if (gameState.sentBy == playerID || gameState.sentFor == playerID) 
-											primaryStage.setScene(lobbyScene);
-									});
-									
-									pause.play();			//Set to play again 
+									//Check if that player should get updated
+									if (gameState.sentBy == playerID || gameState.sentFor == playerID) {
+																				
+										updateOpponent();			//update the image for the opponent
+										
+										sentForID = 0;
+	
+										pause.setOnFinished(event -> {
+	
+											if (gameState.sentBy == playerID || gameState.sentFor == playerID) 
+												primaryStage.setScene(lobbyScene);
+										});
+										
+										pause.play();			//Set to play again 
+									}
 								}
 							}
 						});
@@ -450,7 +467,7 @@ public class RPLS extends Application {
 		
 		//Get the ID from the playerinfo arrayList
 		for (int i = 0; i < gameState.playerinfo.size(); i++) {
-			if (gameState.playerinfo.get(i).clientID == sentForID)
+			if (gameState.playerinfo.get(i).clientID == gameState.sentFor)
 				challengeForIndex = i;
 			else if (gameState.playerinfo.get(i).clientID == gameState.sentBy)
 				sentFromIndex = i;
